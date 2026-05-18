@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SubTracc</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #6c63ff;
+    --accent2: #a78bfa;
+    --warn: #f59e0b;
+    --warn-bg: #2a1f00;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --text: #e2e8f0;
+    --muted: #7c85a2;
+    --radius: 10px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header p {
+    color: var(--muted);
+    margin-top: .35rem;
+    font-size: .9rem;
+  }
+
+  .container { max-width: 780px; margin: 0 auto; }
+
+  /* Summary cards */
+  .summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+  }
+  .card label {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    display: block;
+    margin-bottom: .4rem;
+  }
+  .card .amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent2);
+  }
+  .card .sub {
+    font-size: .8rem;
+    color: var(--muted);
+    margin-top: .2rem;
+  }
+
+  /* Add form */
+  .add-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .add-section h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.4fr auto;
+    gap: .75rem;
+    align-items: end;
+  }
+  .field { display: flex; flex-direction: column; gap: .35rem; }
+  .field label { font-size: .78rem; color: var(--muted); }
+  input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: .55rem .75rem;
+    font-size: .9rem;
+    outline: none;
+    transition: border-color .15s;
+    width: 100%;
+  }
+  input:focus { border-color: var(--accent); }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.6); cursor: pointer; }
+
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    font-size: .9rem;
+    font-weight: 600;
+    transition: opacity .15s, transform .1s;
+  }
+  button:hover { opacity: .85; }
+  button:active { transform: scale(.97); }
+
+  .btn-add {
+    background: var(--accent);
+    color: #fff;
+    padding: .55rem 1.25rem;
+    white-space: nowrap;
+    height: 38px;
+  }
+
+  /* Paste section */
+  .paste-toggle {
+    background: none;
+    color: var(--accent2);
+    font-size: .82rem;
+    padding: 0;
+    margin-top: .75rem;
+    display: inline-block;
+  }
+  .paste-area { display: none; margin-top: .85rem; }
+  .paste-area.open { display: block; }
+  .paste-area textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: .65rem .75rem;
+    font-size: .82rem;
+    font-family: monospace;
+    width: 100%;
+    resize: vertical;
+    min-height: 100px;
+    outline: none;
+    line-height: 1.6;
+  }
+  .paste-area textarea:focus { border-color: var(--accent); }
+  .paste-hint { font-size: .75rem; color: var(--muted); margin-top: .4rem; }
+  .paste-actions { display: flex; gap: .5rem; margin-top: .65rem; }
+  .btn-import {
+    background: var(--accent);
+    color: #fff;
+    padding: .45rem 1rem;
+    font-size: .82rem;
+  }
+  .btn-cancel {
+    background: var(--surface2);
+    color: var(--muted);
+    padding: .45rem 1rem;
+    font-size: .82rem;
+  }
+
+  /* List */
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: .75rem;
+  }
+  .list-header h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .sort-controls { display: flex; gap: .4rem; }
+  .btn-sort {
+    background: var(--surface2);
+    color: var(--muted);
+    padding: .3rem .7rem;
+    font-size: .75rem;
+    border-radius: 20px;
+  }
+  .btn-sort.active { background: var(--accent); color: #fff; }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 3rem 1rem;
+    font-size: .9rem;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+
+  .sub-list { display: flex; flex-direction: column; gap: .5rem; }
+
+  .sub-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: .9rem 1.1rem;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 1rem;
+    transition: border-color .2s;
+  }
+  .sub-item.renewing-soon {
+    border-color: var(--warn);
+    background: linear-gradient(135deg, var(--surface), #1f1a00);
+  }
+  .sub-item:hover { border-color: var(--accent); }
+
+  .sub-name {
+    font-weight: 600;
+    font-size: .95rem;
+  }
+  .sub-meta {
+    display: flex;
+    gap: .6rem;
+    align-items: center;
+    margin-top: .2rem;
+    flex-wrap: wrap;
+  }
+  .renewal-badge {
+    font-size: .72rem;
+    padding: .15rem .5rem;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .renewal-soon { background: var(--warn-bg); color: var(--warn); }
+  .renewal-ok { background: #0f2018; color: #4ade80; }
+  .renewal-overdue { background: #2a0a0a; color: var(--danger); }
+
+  .sub-renewal-date { font-size: .78rem; color: var(--muted); }
+
+  .sub-cost {
+    text-align: right;
+  }
+  .sub-cost .monthly {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--accent2);
+  }
+  .sub-cost .yearly {
+    font-size: .75rem;
+    color: var(--muted);
+  }
+
+  .btn-delete {
+    background: none;
+    color: var(--muted);
+    font-size: 1.1rem;
+    padding: .2rem .4rem;
+    border-radius: 4px;
+    line-height: 1;
+  }
+  .btn-delete:hover { color: var(--danger); background: #2a0a0a; }
+
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .65rem 1.25rem;
+    font-size: .85rem;
+    opacity: 0;
+    transition: transform .25s, opacity .25s;
+    pointer-events: none;
+    z-index: 100;
+    white-space: nowrap;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  @media (max-width: 560px) {
+    .form-row { grid-template-columns: 1fr 1fr; }
+    .form-row .btn-add { grid-column: 1 / -1; width: 100%; }
+    .summary { grid-template-columns: 1fr 1fr; }
+    .sub-item { grid-template-columns: 1fr auto; }
+    .sub-cost { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>SubTracc</h1>
+    <p>Track every subscription. Know what's coming.</p>
+  </header>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="card">
+      <label>Monthly spend</label>
+      <div class="amount" id="monthly-total">$0.00</div>
+      <div class="sub" id="sub-count">0 subscriptions</div>
+    </div>
+    <div class="card">
+      <label>Yearly spend</label>
+      <div class="amount" id="yearly-total">$0.00</div>
+      <div class="sub" id="renewing-soon-count"></div>
+    </div>
+  </div>
+
+  <!-- Add form -->
+  <div class="add-section">
+    <h2>Add subscription</h2>
+    <div class="form-row">
+      <div class="field">
+        <label for="inp-name">Service name</label>
+        <input id="inp-name" type="text" placeholder="Netflix" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="inp-cost">Monthly cost ($)</label>
+        <input id="inp-cost" type="number" min="0" step="0.01" placeholder="15.99">
+      </div>
+      <div class="field">
+        <label for="inp-date">Next renewal</label>
+        <input id="inp-date" type="date">
+      </div>
+      <button class="btn-add" onclick="addFromForm()">Add</button>
+    </div>
+
+    <button class="paste-toggle" onclick="togglePaste()">&#43; Paste a list instead</button>
+
+    <div class="paste-area" id="paste-area">
+      <textarea id="paste-input" placeholder="Netflix, 15.99, 2024-06-10&#10;Spotify, 9.99, 2024-06-15&#10;GitHub, 4.00, 2024-07-01"></textarea>
+      <p class="paste-hint">One subscription per line: <strong>Name, Cost, YYYY-MM-DD</strong>. Existing entries won't be duplicated.</p>
+      <div class="paste-actions">
+        <button class="btn-import" onclick="importPaste()">Import</button>
+        <button class="btn-cancel" onclick="togglePaste()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div class="list-header">
+    <h2>Subscriptions</h2>
+    <div class="sort-controls">
+      <button class="btn-sort active" id="sort-cost" onclick="setSort('cost')">By cost</button>
+      <button class="btn-sort" id="sort-date" onclick="setSort('date')">By date</button>
+      <button class="btn-sort" id="sort-name" onclick="setSort('name')">By name</button>
+    </div>
+  </div>
+  <div id="sub-list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'subtracc_v1';
+let subs = [];
+let sortMode = 'cost';
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    subs = raw ? JSON.parse(raw) : [];
+  } catch { subs = []; }
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(subs));
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function daysUntil(dateStr) {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr + 'T00:00:00');
+  return Math.round((d - now) / 86400000);
+}
+
+function fmt(n) {
+  return '$' + Number(n).toFixed(2);
+}
+
+function fmtDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function addSub(name, cost, renewal) {
+  name = name.trim();
+  cost = parseFloat(cost);
+  if (!name || isNaN(cost) || cost < 0 || !renewal) return false;
+  subs.push({ id: uid(), name, cost, renewal });
+  save();
+  return true;
+}
+
+function deleteSub(id) {
+  subs = subs.filter(s => s.id !== id);
+  save();
+  render();
+  toast('Subscription removed');
+}
+
+function addFromForm() {
+  const name = document.getElementById('inp-name').value;
+  const cost = document.getElementById('inp-cost').value;
+  const renewal = document.getElementById('inp-date').value;
+  if (!name.trim() || !cost || !renewal) {
+    toast('Please fill in all fields');
+    return;
+  }
+  if (addSub(name, cost, renewal)) {
+    document.getElementById('inp-name').value = '';
+    document.getElementById('inp-cost').value = '';
+    document.getElementById('inp-date').value = '';
+    render();
+    toast('Added ' + name.trim());
+  }
+}
+
+function togglePaste() {
+  const area = document.getElementById('paste-area');
+  area.classList.toggle('open');
+  if (area.classList.contains('open')) {
+    document.getElementById('paste-input').focus();
+  }
+}
+
+function importPaste() {
+  const lines = document.getElementById('paste-input').value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  let added = 0, skipped = 0;
+  for (const line of lines) {
+    // Support comma, tab, or semicolon as delimiter
+    const parts = line.split(/[,;\t]/).map(p => p.trim());
+    if (parts.length < 3) { skipped++; continue; }
+    const [name, costRaw, renewal] = parts;
+    const cost = parseFloat(costRaw.replace(/[^0-9.]/g, ''));
+    if (!name || isNaN(cost) || !/^\d{4}-\d{2}-\d{2}$/.test(renewal)) { skipped++; continue; }
+    // Skip duplicates by name (case-insensitive)
+    const dup = subs.some(s => s.name.toLowerCase() === name.toLowerCase());
+    if (dup) { skipped++; continue; }
+    addSub(name, cost, renewal);
+    added++;
+  }
+  render();
+  document.getElementById('paste-input').value = '';
+  togglePaste();
+  if (added) toast(`Imported ${added} subscription${added > 1 ? 's' : ''}${skipped ? `, ${skipped} skipped` : ''}`);
+  else toast(skipped ? 'Nothing imported — check format' : 'Nothing to import');
+}
+
+function setSort(mode) {
+  sortMode = mode;
+  document.querySelectorAll('.btn-sort').forEach(b => b.classList.remove('active'));
+  document.getElementById('sort-' + mode).classList.add('active');
+  render();
+}
+
+function sorted(list) {
+  const copy = [...list];
+  if (sortMode === 'cost') return copy.sort((a, b) => b.cost - a.cost);
+  if (sortMode === 'date') return copy.sort((a, b) => a.renewal.localeCompare(b.renewal));
+  if (sortMode === 'name') return copy.sort((a, b) => a.name.localeCompare(b.name));
+  return copy;
+}
+
+function render() {
+  const monthly = subs.reduce((s, x) => s + x.cost, 0);
+  const yearly = monthly * 12;
+  document.getElementById('monthly-total').textContent = fmt(monthly);
+  document.getElementById('yearly-total').textContent = fmt(yearly);
+  document.getElementById('sub-count').textContent =
+    subs.length + ' subscription' + (subs.length !== 1 ? 's' : '');
+
+  const soon = subs.filter(s => { const d = daysUntil(s.renewal); return d >= 0 && d <= 7; });
+  const soonEl = document.getElementById('renewing-soon-count');
+  if (soon.length) {
+    soonEl.textContent = `⚠ ${soon.length} renewing this week`;
+    soonEl.style.color = 'var(--warn)';
+  } else {
+    soonEl.textContent = '';
+  }
+
+  const container = document.getElementById('sub-list');
+  if (!subs.length) {
+    container.innerHTML = '<div class="empty">No subscriptions yet. Add one above or paste a list.</div>';
+    return;
+  }
+
+  const items = sorted(subs).map(s => {
+    const days = daysUntil(s.renewal);
+    let badgeClass = 'renewal-ok';
+    let badgeText = days === 0 ? 'Today!' : days < 0 ? `${Math.abs(days)}d overdue` : `in ${days}d`;
+    if (days < 0) badgeClass = 'renewal-overdue';
+    else if (days <= 7) badgeClass = 'renewal-soon';
+
+    const warnClass = (days >= 0 && days <= 7) ? 'renewing-soon' : '';
+
+    return `<div class="sub-item ${warnClass}">
+      <div>
+        <div class="sub-name">${esc(s.name)}</div>
+        <div class="sub-meta">
+          <span class="renewal-badge ${badgeClass}">${badgeText}</span>
+          <span class="sub-renewal-date">${fmtDate(s.renewal)}</span>
+        </div>
+      </div>
+      <div class="sub-cost">
+        <div class="monthly">${fmt(s.cost)}<span style="font-size:.7rem;font-weight:400;color:var(--muted)">/mo</span></div>
+        <div class="yearly">${fmt(s.cost * 12)}/yr</div>
+      </div>
+      <button class="btn-delete" onclick="deleteSub('${s.id}')" title="Remove">&#x2715;</button>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `<div class="sub-list">${items}</div>`;
+}
+
+function esc(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// Enter key in form fields
+['inp-name', 'inp-cost', 'inp-date'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') addFromForm();
+  });
+});
+
+load();
+render();
+</script>
+</body>
+</html>
